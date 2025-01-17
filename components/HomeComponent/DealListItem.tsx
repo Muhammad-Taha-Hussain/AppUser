@@ -14,13 +14,11 @@ export const defaultPizzaImage =
 
 
 const DealListItem = React.memo(({ deal }: any) => {
-  
 
-  const segments = useSegments();
-  console.log(segments[0], "/Home/DealDetails/", deal.dealid);
+  // const segments = useSegments();
 
   return (
-    <Link href={`../../app/(user)index/DealDetails/${deal.dealid}`} asChild>
+    <Link href={`/Menu//DealDetails/${deal.dealid}`} asChild>
       <Pressable style={styles.container}>
         <Image source={{ uri: defaultPizzaImage }} style={styles.image} />
         <Text style={styles.title}>{deal.dealname}</Text>

@@ -25,21 +25,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   // Check session on initial load
   useEffect(() => {
-    // const checkSession = async () => {
-    //   const {
-    //     data: { session },
-    //   } = await supabase.auth.getSession();
-    //   const currentUser = session?.user || null;
-    //   setUser(currentUser);
-
-    //   if (currentUser) {
-    //     await ensureUserInCustomersTable(currentUser, '');
-    //     fetchUserProfile(currentUser.id);
-    //   }
-
-    //   setLoading(false);
-    // };
-
     const checkSession = async () => {
       try {
         const {
@@ -77,8 +62,23 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       }
     );
 
-    return () => authListener.subscription.unsubscribe();
-  }, []);
+    
+const profileSubscription = supabase.channel('custom-update-channel')
+.on(
+  'postgres_changes',
+  { event: 'UPDATE', schema: 'public', table: 'customers' },
+  (payload) => {
+    console.log('Change received!', payload)
+    setProfile(payload.new);
+  }
+)
+.subscribe()
+
+    return () => {
+      authListener.subscription.unsubscribe();
+      profileSubscription.unsubscribe();
+    }
+    }, []);
 
   // Ensure user exists in the customers table
   const ensureUserInCustomersTable = async (currentUser, userName) => {

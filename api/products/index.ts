@@ -22,7 +22,7 @@ export const usePaginatedRestaurants = () => {
     cacheTime: 15 * 60 * 1000, // 15 minutes
   });
 };
-
+// itemid, itemdescription, baseprice, discount, availablestatus, rating
 export const usePaginatedProducts = (restaurantId: string) => {
   return useInfiniteQuery({
     queryKey: ['products', restaurantId],
@@ -33,7 +33,7 @@ export const usePaginatedProducts = (restaurantId: string) => {
 
       const { data, error } = await supabase
         .from('restaurantitems')
-        .select('itemid, itemdescription, baseprice, discount, availablestatus, rating')
+        .select('*')
         .eq('restaurantid', restaurantId)
         .range(start, end);
 
@@ -115,14 +115,14 @@ export const useShowDealItems = (dealId: string) => {
     enabled: !!dealId, // Only run the query if dealId exists
   });
 };
-
+// itemid, restaurantid, itemname, itemdescription, baseprice, discount, availablestatus, rating, itemsImage
 export const useShowItems = (itemId: string) => {
   return useQuery({
     queryKey: ['itemList', itemId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('restaurantitems')
-        .select('itemid, restaurantid, itemname, itemdescription, baseprice, discount, availablestatus, rating')
+        .select('*')
         .eq('itemid', itemId)
         .single(); // Filter by deal ID
 

@@ -104,11 +104,15 @@ const RestaurantDetailScreen = () => {
     <ScrollView style={styles.container}>
       <Stack.Screen options={{ title: restaurantName }} />
       {/* Restaurant Items */}
-      <Text style={styles.title}>Restaurant Items:</Text>
+      {items.length > 0 && (
+        <Text style={styles.title}>Restaurant Items:</Text>
+      )}
       <FlatList
         data={productList}
         keyExtractor={(item) => item.itemid.toString()}
-        renderItem={({ item }) => <ProductListItem item={item} restaurantName={restaurantName} />}
+        renderItem={({ item }) => (
+          <ProductListItem item={item} restaurantName={restaurantName} />
+        )}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         columnWrapperStyle={styles.columnWrapper}
@@ -125,7 +129,7 @@ const RestaurantDetailScreen = () => {
         }
       />
       {/* Restaurant Deals */}
-      <Text style={styles.title}>Restaurant Deals:</Text>
+      {deals && (<Text style={styles.title}>Restaurant Deals:</Text>)}
       <FlatList
         data={dealsList}
         keyExtractor={(item) => item.dealid.toString()}

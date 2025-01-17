@@ -25,8 +25,8 @@ export default function MenuStack() {
       }}
     >
       <Stack.Screen name="Home" options={{ title: 'Menu' }} />
-      // <Stack.Screen name="MenuScreen" options={{ headerShown: false }} />
-      // <Stack.Screen name="RestaurantDetails" options={{ headerShown: false }} />
+       <Stack.Screen name="Menu" options={{ headerShown: false }} />
+       <Stack.Screen name="Orders" options={{ headerShown: false }} />
     </Stack>
   );
 }

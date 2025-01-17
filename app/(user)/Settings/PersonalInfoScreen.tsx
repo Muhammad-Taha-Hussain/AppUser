@@ -133,9 +133,6 @@
 
 // export default PersonalInfoScreen;
 
-
-
-
 // import React, { useState, useEffect } from "react";
 // import { View, Text, TextInput, TouchableOpacity, Image, ScrollView } from "react-native";
 // import RNPickerSelect from "react-native-picker-select";
@@ -144,7 +141,6 @@
 // import { ArrowLeftIcon } from "react-native-heroicons/outline";
 // import { useNavigation } from "expo-router";
 // import { useAuth } from "@/providers/AuthProviders";
-
 
 // const PersonalInfoScreen = () => {
 //   const {profile} = useAuth();
@@ -239,7 +235,6 @@
 //           }}
 //         />
 
-        
 //         {profile?.phone ? (
 //           {/* Phone Number */}
 //           <Text className="text-gray-700 mb-1">Phone</Text>
@@ -271,9 +266,6 @@
 //           }`}
 //         />
 //         )}
-        
-
-        
 
 //         {/* Save Button */}
 //         <TouchableOpacity
@@ -291,8 +283,6 @@
 
 // export default PersonalInfoScreen;
 
-
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -302,31 +292,82 @@ import {
   Image,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
 import CountryFlag from "react-native-country-flag";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeftIcon } from "react-native-heroicons/outline";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useAuth } from "@/providers/AuthProviders";
 
-const PersonalInfoScreen = ({ profile }) => {
+import * as FileSystem from "expo-file-system";
+import { randomUUID } from "expo-crypto";
+import { supabase } from "@/lib/supabase";
+import { decode } from "base64-arraybuffer";
+import RemoteImage from "@/components/RemoteImages/RemoteImage";
+import { updateCustomerDetail } from "@/api/profile";
+import { defaultPizzaImage } from "@/components/HomeComponent/DealListItem";
+
+const PersonalInfoScreen = () => {
+  const { profile } = useAuth();
   const [fullName, setFullName] = useState(profile?.name || "");
   const [dob, setDob] = useState("19/06/1999");
   const [gender, setGender] = useState("Male");
-  const [contact, setContact] = useState(profile?.phone || profile?.email || "");
+  const [contact, setContact] = useState(
+    profile?.phone || profile?.email || ""
+  );
   const [isSaveEnabled, setIsSaveEnabled] = useState(false);
-  const [profileImage, setProfileImage] = useState(null); // State to store selected image
+  const [loading, setLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(); // State to store selected image
   const navigation = useNavigation();
 
+  const { mutate: insertCustomerDetail } = updateCustomerDetail();
+
+  const originalState = {
+    fullName: profile?.name || "",
+    profileImage: profile?.image || null,
+  };
+  
+  
+console.log('image type', typeof(profile?.image));
+console.log('image', profile?.image);
+console.log('image', profileImage?.split('/').pop());
+
+
+
+  useEffect(() => {
+    const isNameChanged = fullName !== originalState.fullName;
+// Extract the filename from profile.image if it exists
+const profileImageNameFromProfile = profile?.image ? profile.image.split('/').pop() : '';
+
+// Extract the filename from profileImage if it exists
+const profileImageName = profileImage ? profileImage.split('/').pop() : '';
+
+// Log for debugging
+console.log('Image from profile:', profileImageNameFromProfile);
+console.log('Current profile image:', profileImageName);
+
+// Compare the two extracted filenames
+const isImageChanged = profileImageNameFromProfile !== profileImageName;
+
+// Output the comparison result
+console.log('Is image changed:', isImageChanged);
+
+  setIsSaveEnabled(isNameChanged || isImageChanged);
+  }, [fullName, profileImage]);
+
+
+  console.log("mai profile", profile);
+
   // Validate email
-  const validateEmail = (email) => {
+  const validateEmail = (email: string) => {
     return email.endsWith("@gmail.com") && /\S+@\S+\.\S+/.test(email);
   };
 
   // Validate phone
-  const validatePhone = (phone) => {
+  const validatePhone = (phone: any) => {
     return /^\d{10}$/.test(phone);
   };
 
@@ -334,12 +375,60 @@ const PersonalInfoScreen = ({ profile }) => {
   const isEmail = validateEmail(contact);
   const isPhone = validatePhone(contact);
 
+  //image code
+  const onCreate = async () => {
+    // if (!validateInput()) {
+    //   return;
+    // }
+    setLoading(true);
+    const imagePath = await uploadImage();
+    console.log("Hello image update", imagePath);
+
+    const id = profile?.customerid;
+    console.log("Hello id", id);
+    console.log("heloo fullname", fullName);
+
+    // Save in the database
+    insertCustomerDetail(
+      { id, fullName, image: imagePath },
+      {
+        onSuccess: () => {
+          // resetFields();
+          console.log("successfully word done");
+
+          router.back();
+        },
+      }
+    );
+  };
+  const uploadImage = async () => {
+    if (!profileImage?.startsWith("file://")) {
+      return;
+    }
+
+    const base64 = await FileSystem.readAsStringAsync(profileImage, {
+      encoding: "base64",
+    });
+    const filePath = `${randomUUID()}.png`;
+    const contentType = "image/png";
+
+    const { data, error } = await supabase.storage
+      .from("profile-images")
+      .upload(filePath, decode(base64), { contentType });
+
+    console.log(error);
+
+    if (data) {
+      return data.path;
+    }
+  };
+
   // Enable save button based on validation
   useEffect(() => {
     if (
       fullName.trim() !== "" &&
-      dob.trim() !== "" &&
-      gender &&
+      // dob.trim() !== "" &&
+      // gender &&
       (isEmail || isPhone)
     ) {
       setIsSaveEnabled(true);
@@ -358,6 +447,7 @@ const PersonalInfoScreen = ({ profile }) => {
         "Permission Required",
         "You need to allow access to your photos to update your profile picture."
       );
+      setProfileImage(null);
       return;
     }
 
@@ -393,14 +483,27 @@ const PersonalInfoScreen = ({ profile }) => {
         {/* Profile Image */}
         <View className="items-center mb-4">
           <TouchableOpacity onPress={pickImage}>
-            <Image
+            {profileImage ? (
+              <Image
+                source={{ uri: profileImage }}
+                className="w-36 h-36 rounded-full"
+              />
+            ) : (
+              <RemoteImage
+                path={profile?.image}
+                fallback={'../../assets/images/profile.jpg'}
+                className="w-36 h-36 rounded-full"
+              />
+            )}
+
+            {/* <Image
               source={
                 profileImage
                   ? { uri: profileImage }
                   : require("../../../assets/images/profile.jpg")
               }
               className="w-24 h-24 rounded-full"
-            />
+            /> */}
             <View className="absolute bottom-0 right-0 bg-yellow-400 p-2 rounded-full">
               <Text className="text-black text-xs">📸</Text>
             </View>
@@ -410,23 +513,24 @@ const PersonalInfoScreen = ({ profile }) => {
         {/* Full Name */}
         <Text className="text-gray-700 mb-1">Full Name</Text>
         <TextInput
-          value={fullName}
+          // value={fullName}
+          placeholder={fullName}
           onChangeText={setFullName}
           className="border p-2 rounded mb-4"
         />
 
         {/* Date of Birth */}
-        <Text className="text-gray-700 mb-1">Date of Birth</Text>
+        {/* <Text className="text-gray-700 mb-1">Date of Birth</Text>
         <TextInput
           value={dob}
           onChangeText={setDob}
           placeholder="DD/MM/YYYY"
           keyboardType="numeric"
           className="border p-2 rounded mb-4"
-        />
+        /> */}
 
         {/* Gender Dropdown */}
-        <Text className="text-gray-700 mb-1">Gender</Text>
+        {/* <Text className="text-gray-700 mb-1">Gender</Text>
         <RNPickerSelect
           onValueChange={(value) => setGender(value)}
           items={[
@@ -450,7 +554,7 @@ const PersonalInfoScreen = ({ profile }) => {
               borderColor: "black",
             },
           }}
-        />
+        /> */}
 
         {/* Contact Input */}
         <Text className="text-gray-700 mb-1">
@@ -469,6 +573,9 @@ const PersonalInfoScreen = ({ profile }) => {
           )}
           <TextInput
             value={contact}
+            editable={false}  // Disable editing
+            selectTextOnFocus={false}  // Prevent text selection
+            defaultValue={profile?.phone || profile?.email}
             onChangeText={setContact}
             keyboardType={isPhone ? "numeric" : "email-address"}
             maxLength={isPhone ? 10 : undefined}
@@ -479,12 +586,13 @@ const PersonalInfoScreen = ({ profile }) => {
 
         {/* Save Button */}
         <TouchableOpacity
-          disabled={!isSaveEnabled}
+          disabled={!isSaveEnabled || loading}
           className={`p-3 rounded-full ${
-            isSaveEnabled ? "bg-green-600" : "bg-gray-400"
+            loading || !isSaveEnabled ? "bg-gray-400" : "bg-green-600"
           }`}
+          onPress={onCreate}
         >
-          <Text className="text-center text-white font-bold">Save</Text>
+          {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-center">Save</Text>}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

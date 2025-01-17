@@ -1,15 +1,45 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from 'expo-router';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProviders";
+import AppIntroSlider from "react-native-app-intro-slider";
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import { Dimensions } from "react-native";
+
+
+const slides = [
+  {
+    id: 1,
+    title: 'Discover Best Places',
+    description: '“Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat"',
+    image: require('../../assets/images/onboardScreen1.png')
+  },
+  {
+    id: 2,
+    title: 'Choose A Tasty Dish',
+    description: '“Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat"',
+    image: require('../../assets/images/onboardScreen2.png')
+  },
+  {
+    id: 3,
+    title: 'Pick Up The Delivery',
+    description: '“Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat"',
+    image: require('../../assets/images/onboardScreen3.png')
+  }
+]
 
 const LoginScreen = () => {
+  const [showHomePage, setShowHomePage] = useState(false);
+  const { width, height } = Dimensions.get('screen');
+  console.log(Dimensions.get('screen'));
+  
+
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, profile } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(""); // State to hold password input
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Toggle state for visibility
@@ -34,6 +64,52 @@ const LoginScreen = () => {
       setLoading(false);
     }
   }
+
+
+    // Check AsyncStorage to see if the intro slider has been shown
+    useEffect(() => {
+      const checkIntroStatus = async () => {
+        const introShown = await AsyncStorage.getItem('introShown');
+        if (introShown) {
+          setShowHomePage(true);
+        }
+      };
+      checkIntroStatus();
+    }, []);
+
+    const handleDone = async () => {
+      await AsyncStorage.setItem('introShown', 'true'); // Set introShown flag
+      setShowHomePage(true);
+    };
+
+    const buttonLabel = (label: string) => {
+      return (
+        <View style={{ padding: 12 }}>
+          <Text style={{ color: '#072F4A', fontWeight: '600', fontSize: 16 }}>{label}</Text>
+        </View>
+      );
+    };
+  
+    if (!showHomePage) {
+      return (
+        <AppIntroSlider
+          data={slides}
+          renderItem={({ item }) => (
+            <View style={{ flex: 1, alignItems: 'center', padding: 15, paddingTop: 100 }}>
+              <Image source={item.image} style={{ width: width - 80, height: 400 }} resizeMode="contain" />
+              <Text style={{ fontWeight: 'bold', color: '#072F4A', fontSize: 22 }}>{item.title}</Text>
+              <Text style={{ textAlign: 'center', paddingTop: 5, color: '#072F4A' }}>{item.description}</Text>
+            </View>
+          )}
+          activeDotStyle={{ backgroundColor: '#f52d56', width: 30 }}
+          showSkipButton
+          renderNextButton={() => buttonLabel("Next")}
+          renderSkipButton={() => buttonLabel("Skip")}
+          renderDoneButton={() => buttonLabel("Done")}
+          onDone={handleDone}
+        />
+      );
+    }
 
   return (
     <SafeAreaView className="flex-1 bg-white">

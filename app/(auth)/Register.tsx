@@ -135,7 +135,7 @@ const RegisterScreen = () => {
       {/* Have an account */}
       <View className="flex-row justify-center mt-6">
         <Text className="text-sm text-gray-500">Have an account? </Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push('/(auth)')}>
           <Text className="text-sm text-green-600 font-bold">Sign In</Text>
         </TouchableOpacity>
       </View>

@@ -54,6 +54,8 @@ const CartProvider = ({ children }: PropsWithChildren) => {
       //   .select("*")
       //   .eq("customerid", profile.customerid);
 
+      if(!profile) return;
+
       const { data, error } = await supabase
         .from("carts")
         .select("*, cartitems(*, restaurantitems(*)), restaurants(*)")

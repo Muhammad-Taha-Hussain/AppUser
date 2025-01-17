@@ -9,20 +9,25 @@ import {
   Image,
   Button,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { useShowItems } from "@/api/products";
-import { defaultPizzaImage } from "@/components/HomeComponent/RestaurantListItem";
+import { defaultPizzaImage } from "@/components/HomeComponent/RestaurantListItem"; 
 import { useCart } from "@/providers/CartProvider";
+import { useAuth } from "@/providers/AuthProviders";
+import RemoteImageItems from "@/components/RemoteImages/RemoteImageItems";
 
 const ProductDetailsScreen = () => {
   const { id: idString, restaurantName } = useLocalSearchParams();
   console.log(restaurantName);
 
+  const { profile } = useAuth();
+
   const productId = typeof idString === "string" ? idString : idString[0];
 
   const { data: item, error, isLoading, refetch } = useShowItems(productId);
-  console.log(item);
+  // console.log("image uye hai", item);
 
   const [quantity, setQuantity] = useState(1); // State for product quantity
   const { addItem } = useCart(); // Add item function from cart context
@@ -41,6 +46,11 @@ const ProductDetailsScreen = () => {
 
   // Handler to add item to cart
   const handleAddToCart = async () => {
+    if(!profile) {
+      Alert.alert('Please login to add items to cart');
+      router.push('/(auth)');
+      return;
+    }
     if (item) {
       await addItem(item, quantity || 1, restaurantId); // Ensure default quantity is 1
     }
@@ -69,8 +79,14 @@ const ProductDetailsScreen = () => {
   return (
     <SafeAreaView style={styles.productDetailsContainer}>
       <Stack.Screen options={{ title: restaurantName }} />
-      <Image source={{ uri: defaultPizzaImage }} style={styles.image} />
-      <Text style={styles.title}>{item.itemdescription}</Text>
+      {/* <Image source={{ uri: defaultPizzaImage }} style={styles.image} /> */}
+      <RemoteImageItems
+          path={item.itemsImage}
+          fallback={defaultPizzaImage}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      <Text style={styles.title}>{item.itemname}</Text>
       <Text style={styles.price}>Price: ${item.baseprice}</Text>
       <Text style={styles.discount}>Discount: {item.discount}%</Text>
       <Text style={styles.availability}>

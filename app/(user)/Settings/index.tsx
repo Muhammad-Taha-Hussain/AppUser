@@ -153,7 +153,7 @@ const SettingsScreen = () => {
             name={profile?.name || "User Name"}
             email={profile?.email || "user@example.com"}
             imageUrl={
-              profile?.profileImage || "https://via.placeholder.com/150"
+              profile?.image || "../../assets/images/profile.jpg"
             }
           />
 
