@@ -16,12 +16,16 @@ const AuthContext = createContext({
   signUp: async () => {},
   login: async () => {},
   logout: async () => {},
+  forgotPassword: async () => {},
+  resetPassword: async () => {},
 });
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [resetCode, setResetCode] = useState(null);
+  const [resetExpiration, setResetExpiration] = useState(null);
 
   // Check session on initial load
   useEffect(() => {
@@ -192,9 +196,48 @@ const profileSubscription = supabase.channel('custom-update-channel')
     router.replace("/(auth)");
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+      setResetCode(generatedCode);
+      setResetExpiration(Date.now() + 10 * 60 * 1000); // Code expires in 10 minutes
+      // Send code via email using Supabase or a third-party service
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) throw error;
+      console.log("Reset code sent.");
+    } catch (error) {
+      console.error("Forgot Password Error:", error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email, code, newPassword) => {
+    if (!resetCode || !resetExpiration || Date.now() > resetExpiration) {
+      alert("The reset code has expired. Please request a new one.");
+      return;
+    }
+    if (code !== resetCode) {
+      alert("Invalid reset code.");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email,
+        password: newPassword,
+      });
+      if (error) throw error;
+      alert("Password updated successfully.");
+      router.replace("/(auth)/login");
+    } catch (error) {
+      console.error("Reset Password Error:", error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signUp, login, logout }}
+      value={{ user, profile, loading, signUp, login, logout, forgotPassword, resetPassword }}
     >
       {children}
     </AuthContext.Provider>

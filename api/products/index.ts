@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 export const usePaginatedRestaurants = () => {
   return useInfiniteQuery({
     queryKey: ["restaurants"],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 0 }: any) => {
       const ITEMS_PER_PAGE = 5;
       const start = pageParam * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE - 1;
@@ -23,10 +23,12 @@ export const usePaginatedRestaurants = () => {
   });
 };
 // itemid, itemdescription, baseprice, discount, availablestatus, rating
+
+//It is to showing the Restaurnts Items
 export const usePaginatedProducts = (restaurantId: string) => {
   return useInfiniteQuery({
     queryKey: ['products', restaurantId],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 0 }: any) => {
       const ITEMS_PER_PAGE = 5;
       const start = pageParam * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE - 1;
@@ -44,14 +46,33 @@ export const usePaginatedProducts = (restaurantId: string) => {
         nextPage: data.length === ITEMS_PER_PAGE ? pageParam + 1 : null,
       };
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+    getNextPageParam: (lastPage: any) => lastPage.nextPage,
   });
 };
 
-export const usePaginatedDeals = (restaurantId) => {
+//It is to showing the Restaurnts Items in detail with the Customization
+export const useProductsDetail = (itemId: string) => {
+  return useQuery({
+    queryKey: ['customizationProduct', itemId],
+    queryFn: async () => {
+
+      const { data, error } = await supabase
+        .from('customizationItems')
+        .select('*')
+        .eq('itemId', itemId)
+        .order('desc')
+
+      if (error) throw new Error(`Supabase Query Error: ${error.message}`);
+      return data;
+    },
+  });
+};
+
+//It is to showing the Restaurants Deals
+export const usePaginatedDeals = (restaurantId: string) => {
   return useInfiniteQuery({
     queryKey: ['deals', restaurantId],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 0 }: any) => {
       const ITEMS_PER_PAGE = 5;
       const start = pageParam * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE - 1;
@@ -134,7 +155,34 @@ export const useShowItems = (itemId: string) => {
       console.log('Fetched Data:', data);
       return data || []; // Ensure data is an array
     },
-    enabled: !!itemId, // Only run the query if dealId exists
+    enabled: !!itemId, // Only run the query if itemId exists
+  });
+};
+
+export const useShowItemWithCustomizations = (itemId: string) => {
+  return useQuery({
+    queryKey: ['itemDetails', itemId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('restaurantitems')
+        .select(`
+          *,
+          customizationitems(
+            *,
+            customizationitemsvalue(*)
+          )
+        `)
+        .eq('itemid', itemId)
+        .single();
+
+      if (error) {
+        console.error('Supabase Query Error:', error.message);
+        throw new Error(`Supabase Query Error: ${error.message}`);
+      }
+
+      return data; // Ensure data includes all nested relationships
+    },
+    enabled: !!itemId, // Query runs only if itemId is provided
   });
 };
 

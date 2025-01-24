@@ -14,11 +14,14 @@ import CartProvider from "@/providers/CartProvider";
 import { ActivityIndicator, View } from "react-native";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import {AuthProvider} from '@/providers/AuthProviders'
+import { LocationProvider } from "@/providers/LocationProvider";
 
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <LocationProvider>
       <RootLayoutNav />
+      </LocationProvider>
      </AuthProvider>
   );
 }

@@ -1,15 +1,32 @@
+import { useAuth } from "@/providers/AuthProviders";
 import { useNavigation } from "expo-router";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-const ResetPasswordScreen = () => {
+const ResetPasswordScreen = ({ route }: any) => {
   const navigation = useNavigation();
+  const { email } = route.params;
+  const { resetPassword } = useAuth();
+  const [error, setError] = useState("");
   const [password, setPassword] = useState(""); // State to hold password input
   const [confirmPassword, setConfirmPassword] = useState(""); // State for confirm password
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Toggle state for visibility
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false); // Toggle state for confirm password visibility
+
+  const handlePasswordReset = async () => {
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    try {
+      await resetPassword(email, password);
+      navigation.navigate("(user)");
+    } catch (err) {
+      setError("Failed to reset password. Try again.");
+    }
+  };
 
   // Validation conditions
   const isPasswordValid = password.length >= 8;
@@ -89,7 +106,7 @@ const ResetPasswordScreen = () => {
 
       {/* Button */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("(user)")}
+        onPress={handlePasswordReset}
         className="bg-green-500 rounded-full py-3"
       >
         <Text className="text-center text-white font-bold text-lg">

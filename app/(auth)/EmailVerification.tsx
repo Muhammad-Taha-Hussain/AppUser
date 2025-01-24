@@ -2,13 +2,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useNavigation } from "expo-router";
+import { useAuth } from "@/providers/AuthProviders";
 
-const EmailVerificationScreen = () => {
-  const navigation = useNavigation()
+const EmailVerificationScreen = ({ route }: any) => {
+  const navigation = useNavigation();
+  const { email } = route.params;  // Access email passed from ResetPassword
+  console.log('here is the email', email);
+  
+
+  const { verifyOtp } = useAuth();  // Assume verifyOtp for OTP validation in AuthProvider
+  const [error, setError] = useState("");
+
+
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [timer, setTimer] = useState(600); // 10 minutes in seconds
   const [resendVisible, setResendVisible] = useState(false);
+
+  const handleVerifyOtp = async () => {
+    try {
+      const otpCode = otp.join("");
+      await verifyOtp(email, otpCode);
+      navigation.navigate('ChangePassword', { email });
+    } catch (err) {
+      setError("Invalid OTP. Please try again.");
+    }
+  };
 
   const inputRefs = useRef([]);
 
@@ -58,7 +77,7 @@ const EmailVerificationScreen = () => {
       {/* Header */}
       <Text className="text-2xl font-bold mb-2">Email Verification</Text>
       <Text className="text-gray-500 mb-8 text-center">
-        Enter the verification code we sent you on: {"\n"} Alberts*****@gmail.com
+        Enter the verification code we sent you on: {"\n"} {email}
       </Text>
 
       {/* OTP Input Fields */}
@@ -77,6 +96,9 @@ const EmailVerificationScreen = () => {
             } text-center text-lg font-bold rounded`}
           />
         ))}
+
+{error ? <Text className="text-red-500 mb-4">{error}</Text> : null}
+
       </View>
 
       {/* Timer or Resend Code */}
@@ -89,7 +111,7 @@ const EmailVerificationScreen = () => {
       )}
 
       {/* Continue Button */}
-      <TouchableOpacity className="rounded-full bg-green-500 w-full py-3" activeOpacity={0.7} onPress={() => navigation.navigate('ChangePassword')}>
+      <TouchableOpacity className="rounded-full bg-green-500 w-full py-3" activeOpacity={0.7} onPress={handleVerifyOtp}>
         <Text className="text-white text-center font-bold text-lg">Continue</Text>
       </TouchableOpacity>
     </View>
