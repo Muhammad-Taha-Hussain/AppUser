@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline"; // Install heroicons package
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProviders";
 
@@ -17,13 +17,13 @@ const RegisterScreen = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Toggle state for visibility
 
   async function signUpWithEmail() {
-    // setLoading(true);
+    setLoading(true);
     // try {
     //   const { data, error } = await supabase.auth.signUp({
     //     email: "fa21-bcs-122@cuilahore.edu.pk",
     //     password: "securepassword",
     //   });
-      
+
     //   if (error) {
     //     console.error("Sign Up Error:", error);
     //   } else {
@@ -35,7 +35,18 @@ const RegisterScreen = () => {
     //   Alert.alert('Sign Up failed', error.message);
     // }
     // setLoading(false);
-    signUp(email, password, userName)
+
+    try {
+      signUp(email, password, userName);
+      router.replace("/(user)/"); // Redirect to user dashboard on success
+    } catch (error) {
+      Alert.alert(
+        "Login Failed",
+        error.message || "An error occurred. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -135,7 +146,7 @@ const RegisterScreen = () => {
       {/* Have an account */}
       <View className="flex-row justify-center mt-6">
         <Text className="text-sm text-gray-500">Have an account? </Text>
-        <TouchableOpacity onPress={() => router.push('/(auth)')}>
+        <TouchableOpacity onPress={() => router.push("/(auth)")}>
           <Text className="text-sm text-green-600 font-bold">Sign In</Text>
         </TouchableOpacity>
       </View>
